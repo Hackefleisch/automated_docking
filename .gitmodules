@@ -1,0 +1,3 @@
+[submodule "DiffDock"]
+	path = DiffDock
+	url = git@github.com:gcorso/DiffDock.git
