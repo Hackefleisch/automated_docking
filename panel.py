@@ -17,7 +17,7 @@ editor = JSMEEditor(value="CN1CCC23C4C1CC5=C2C(=C(C=C5)O)OC3C(C=C4)O", height=50
 editor.servable()
 
 pose = ligand_docking.load_pose( "input/8ef6_0001_R.pdb" )
-protocol = ligand_docking.create_protocol("input/transform_repack.xml", ["high_res_docker", "final"])
+protocol, scfx = ligand_docking.create_protocol("input/transform_repack.xml", ["high_res_docker", "final"], ["hard_rep"])
 complex = None
 
 def draw_mol(smiles):
@@ -37,10 +37,11 @@ def update_image(event):
     image_pane.object = draw_mol(smiles)
 
 def dock_ligand(event):
-    global pose, protocol, complex
+    global pose, protocol, complex, scfx
     smiles = editor.value
-    complex = ligand_docking.full_docking(smiles, pose, protocol)
+    complex, score = ligand_docking.full_docking(smiles, pose, protocol, scfx)
     print(complex.scores)
+    print(score)
 
 def save_pose(event):
     global complex

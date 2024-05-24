@@ -110,18 +110,35 @@ def create_complex(pose, res):
 
     return copy_pose
 
-def create_protocol(path, mover):
+def create_protocol(path, mover, scfx):
 
     xml_objects = pyrosetta.rosetta.protocols.rosetta_scripts.XmlObjects.create_from_file(path)
     protocol = []
     for m in mover:
         protocol.append(xml_objects.get_mover(m))
-    return protocol
+    score_func = []
+    for sf in scfx:
+        score_func.append(xml_objects.get_score_function(sf))
+    return protocol, score_func
 
-def full_docking(smiles, pose, protocol):
+def full_docking(smiles, pose, protocol, scfx):
     mol = diffuse_ligand(smiles)
     res = mol_to_res(mol)
     complex = create_complex(pose, res)
-    for p in protocol:
-        p.apply(complex)
-    return complex
+    best_score = 999999.99
+    best_complex = pyrosetta.rosetta.core.pose.Pose()
+    best_complex.detached_copy(complex)
+    work_pose = pyrosetta.rosetta.core.pose.Pose()
+    for pr in range(10):
+        print("----Protocol round", pr)
+        work_pose.detached_copy(complex)
+        for p in protocol:
+            print("----Apply", p.get_name())
+            p.apply(work_pose)
+        idelta = pyrosetta.rosetta.protocols.ligand_docking.get_interface_deltas( 'X', work_pose, scfx[0] )
+        score = idelta["interface_delta_X"] - idelta["if_X_coordinate_constraint"]
+        print("----Current score:", score, "best score:", best_score)
+        if score < best_score:
+            best_score = score
+            best_complex.detached_copy(work_pose)
+    return best_complex, best_score
