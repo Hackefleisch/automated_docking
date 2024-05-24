@@ -1,15 +1,19 @@
 
 from rdkit import Chem
 from rdkit.Chem import AllChem
+from ligand_diffusion import diffuse_ligand
 
 from pyrosetta import *
 
 pyrosetta.init()
 
-def smiles_to_res(smiles):
+def smiles_to_mol(smiles):
     mol = Chem.MolFromSmiles(smiles)
     mol = Chem.AddHs(mol)
     AllChem.EmbedMolecule(mol)
+    return mol
+
+def mol_to_res(mol):
     chem_manager = pyrosetta.rosetta.core.chemical.ChemicalManager.get_instance()
 
     tag = "fa_standard"
@@ -96,14 +100,28 @@ def load_pose(path):
 
 def create_complex(pose, res):
 
-    pose.append_residue_by_jump( res, 1, "", "", True )
+    copy_pose = pyrosetta.rosetta.core.pose.Pose()
+    copy_pose.detached_copy(pose)
+
+    copy_pose.append_residue_by_jump( res, 1, "", "", True )
     # I will assume the last residue is the ligand
-    pose.pdb_info().chain( pose.total_residue(), 'X' )
-    pose.update_pose_chains_from_pdb_chains()
+    copy_pose.pdb_info().chain( pose.total_residue(), 'X' )
+    copy_pose.update_pose_chains_from_pdb_chains()
 
-    return pose
+    return copy_pose
 
-def create_protocol(path):
+def create_protocol(path, mover):
 
-    xml_objects = pyrosetta.rosetta.protocols.rosetta_scripts.XmlObjects.create_from_file("input/transform_repack.xml")
-    return xml_objects.get_mover('ParsedProtocol')
+    xml_objects = pyrosetta.rosetta.protocols.rosetta_scripts.XmlObjects.create_from_file(path)
+    protocol = []
+    for m in mover:
+        protocol.append(xml_objects.get_mover(m))
+    return protocol
+
+def full_docking(smiles, pose, protocol):
+    mol = diffuse_ligand(smiles)
+    res = mol_to_res(mol)
+    complex = create_complex(pose, res)
+    for p in protocol:
+        p.apply(complex)
+    return complex

@@ -12,12 +12,13 @@ import ligand_docking
 
 pn.extension("jsme", sizing_mode="stretch_width")
 
-editor = JSMEEditor(value="CC", height=500, format="smiles")
+editor = JSMEEditor(value="CN1CCC23C4C1CC5=C2C(=C(C=C5)O)OC3C(C=C4)O", height=500, format="smiles")
 
 editor.servable()
 
-pose = None
-rosetta_protocol = ligand_docking.create_protocol("input/transform_repack.xml")
+pose = ligand_docking.load_pose( "input/8ef6_0001_R.pdb" )
+protocol = ligand_docking.create_protocol("input/transform_repack.xml", ["high_res_docker", "final"])
+complex = None
 
 def draw_mol(smiles):
     mol = Chem.MolFromSmiles(smiles)
@@ -36,17 +37,14 @@ def update_image(event):
     image_pane.object = draw_mol(smiles)
 
 def dock_ligand(event):
-    global pose
+    global pose, protocol, complex
     smiles = editor.value
-    res = ligand_docking.smiles_to_res(smiles)
-    pose = ligand_docking.load_pose("input/protein_target.pdb")
-    pose = ligand_docking.create_complex(pose, res)
-    rosetta_protocol.apply(pose)
-    print(pose.scores)
+    complex = ligand_docking.full_docking(smiles, pose, protocol)
+    print(complex.scores)
 
 def save_pose(event):
-    global pose
-    pose.dump_pdb("test.pdb")
+    global complex
+    complex.dump_pdb("test.pdb")
 
 image_pane = pn.pane.PNG()
 
