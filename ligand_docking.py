@@ -142,3 +142,17 @@ def full_docking(smiles, pose, protocol, scfx):
             best_score = score
             best_complex.detached_copy(work_pose)
     return best_complex, best_score
+
+def main():
+    pose = load_pose( "input/8ef6_0001_R.pdb" )
+    protocol, scfx = create_protocol("input/transform_repack.xml", ["high_res_docker", "final"], ["hard_rep"])
+
+    smiles = "CN1CCC23C4C1CC5=C2C(=C(C=C5)O)OC3C(C=C4)O"
+    complex, score = full_docking(smiles, pose, protocol, scfx)
+    print(complex.scores)
+    print(score)
+
+    complex.dump_pdb("output/tmp.pdb")
+
+if __name__ == "__main__":
+    main()
