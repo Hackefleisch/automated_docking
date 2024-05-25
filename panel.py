@@ -8,7 +8,7 @@ import PIL
 from io import BytesIO
 
 import ligand_docking
-
+import plip_analysis
 
 pn.extension("jsme", sizing_mode="stretch_width")
 
@@ -37,28 +37,28 @@ def update_image(event):
     image_pane.object = draw_mol(smiles)
 
 def dock_ligand(event):
-    global pose, protocol, complex, scfx
+    global pose, protocol, complex, scfx, editor
     smiles = editor.value
     complex, score = ligand_docking.full_docking(smiles, pose, protocol, scfx)
     print(complex.scores)
     print(score)
+    complex.dump_pdb("output/tmp.pdb")
 
-def save_pose(event):
-    global complex
-    complex.dump_pdb("test.pdb")
+def analyze_pose(event):
+    plip_analysis.run_analysis()
 
 image_pane = pn.pane.PNG()
 
 # Create a button widget
 draw_button = pn.widgets.Button(name='Generate Image', button_type='primary')
 dock_button = pn.widgets.Button(name='Dock Ligand', button_type='primary')
-save_button = pn.widgets.Button(name='Save Pose', button_type='primary')
+analyze_button = pn.widgets.Button(name='Analyze Pose', button_type='primary')
 
 # Link the button to the function
 draw_button.on_click(update_image)
 dock_button.on_click(dock_ligand)
-save_button.on_click(save_pose)
+analyze_button.on_click(analyze_pose)
 
 # Create and display the Panel layout
-layout = pn.Column(editor, pn.Row(draw_button, dock_button, save_button), image_pane)
+layout = pn.Column(editor, pn.Row(draw_button, dock_button, analyze_button), image_pane)
 layout.show()
