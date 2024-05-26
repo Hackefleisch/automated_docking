@@ -155,4 +155,4 @@ def diffuse_ligand(smiles):
             x,y,z = ligand_pos[best_result_idx].astype(np.double)[i]
             conf.SetAtomPosition(i,Point3D(x,y,z))
 
-    return mol_pred
+    return mol_pred, distances[best_result_idx]

@@ -124,6 +124,31 @@ def visualize_in_pymol(plcomplex):
 
     cmd.save("output/pymol_session.pse")
 
+def analyse_binding(mol):
+    site = list(mol.interaction_sets.values())[0]
+    
+    n_hydroph = len(site.hydrophobic_contacts)
+    n_hbond = len(site.hbonds_pdon + site.hbonds_ldon)
+    n_saltbridge = len(site.saltbridge_lneg + site.saltbridge_pneg)
+    n_pistack = len(site.pistacking)
+    n_pication = len(site.pication_laro + site.pication_paro)
+    n_halogen = len(site.halogen_bonds)
+
+    # check if res 84 participates in hbond or saltbridge
+    interact_84 = False
+    for sb in site.saltbridge_lneg + site.saltbridge_pneg:
+        if sb.resnr == 84:
+            interact_84 = True
+            break
+
+    if not interact_84:
+        for hbond in site.hbonds_pdon + site.hbonds_ldon:
+            if hbond.resnr == 84:
+                interact_84 = True
+                break
+
+    return n_hydroph, n_hbond, n_saltbridge, n_pistack, n_pication, n_halogen, interact_84
+
 def run_analysis():
     mol = PDBComplex()
     mol.load_pdb('output/tmp.pdb')
@@ -131,14 +156,16 @@ def run_analysis():
         mol.characterize_complex(ligand)
 
     streport = StructureReport(mol, outputprefix="")
-    for line in streport.txtreport:
-        print(line)
+    with open("output/tmp_report.txt", 'w') as file:
+        file.write("\n".join(streport.txtreport))
 
     complexes = [VisualizerData(mol, site) for site in sorted(mol.interaction_sets)
                     if not len(mol.interaction_sets[site].interacting_res) == 0]
     complexes[0].sourcefile = 'output/tmp.pdb'
     print(complexes[0].sourcefile)
     [visualize_in_pymol(plcomplex) for plcomplex in complexes]
+
+    return analyse_binding(mol)
 
 def main():
     run_analysis()

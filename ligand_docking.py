@@ -122,7 +122,7 @@ def create_protocol(path, mover, scfx):
     return protocol, score_func
 
 def full_docking(smiles, pose, protocol, scfx):
-    mol = diffuse_ligand(smiles)
+    mol, distance = diffuse_ligand(smiles)
     res = mol_to_res(mol)
     complex = create_complex(pose, res)
     best_score = 999999.99
@@ -141,7 +141,7 @@ def full_docking(smiles, pose, protocol, scfx):
         if score < best_score:
             best_score = score
             best_complex.detached_copy(work_pose)
-    return best_complex, best_score
+    return best_complex, best_score, distance
 
 def main():
     pose = load_pose( "input/8ef6_0001_R.pdb" )
