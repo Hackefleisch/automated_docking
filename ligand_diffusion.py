@@ -5,6 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname("DiffDock/")))
 
 from DiffDock.utils.sampling import randomize_position, sampling
 from DiffDock.utils.utils import get_model
+from DiffDock.utils.download import download_and_extract
 from argparse import Namespace
 from functools import partial
 from DiffDock.utils.diffusion_utils import t_to_sigma as t_to_sigma_compl, get_t_schedule
@@ -31,7 +32,31 @@ model_dir = 'DiffDock/workdir/v1.1/score_model'
 conf_model_dir = 'DiffDock/workdir/v1.1/confidence_model'
 out_dir = 'output'
 samples_per_complex = 5
+REPOSITORY_URL = os.environ.get("REPOSITORY_URL", "https://github.com/gcorso/DiffDock")
+REMOTE_URLS = [f"{REPOSITORY_URL}/releases/latest/download/diffdock_models.zip",
+               f"{REPOSITORY_URL}/releases/download/v1.1/diffdock_models.zip"]
+
 center = np.array([140.2520, 126.5740, 133.8730])
+if not os.path.exists(model_dir):
+        print(f"Models not found. Downloading")
+        remote_urls = REMOTE_URLS
+        downloaded_successfully = False
+        for remote_url in remote_urls:
+            try:
+                print(f"Attempting download from {remote_url}")
+                files_downloaded = download_and_extract(remote_url, os.path.dirname(model_dir))
+                if not files_downloaded:
+                    print(f"Download from {remote_url} failed.")
+                    continue
+                print(f"Downloaded and extracted {len(files_downloaded)} files from {remote_url}")
+                downloaded_successfully = True
+                # Once we have downloaded the models, we can break the loop
+                break
+            except Exception as e:
+                pass
+
+        if not downloaded_successfully:
+            raise Exception(f"Models not found locally and failed to download them from {remote_urls}")
 
 with open(model_dir+'/model_parameters.yml') as f:
     score_model_args = Namespace(**yaml.full_load(f))
