@@ -129,7 +129,7 @@ def full_docking(smiles, pose, protocol, scfx):
     best_complex = pyrosetta.rosetta.core.pose.Pose()
     best_complex.detached_copy(complex)
     work_pose = pyrosetta.rosetta.core.pose.Pose()
-    for pr in range(10):
+    for pr in range(30):
         print("----Protocol round", pr)
         work_pose.detached_copy(complex)
         for p in protocol:
