@@ -105,7 +105,7 @@ def create_complex(pose, res):
 
     copy_pose.append_residue_by_jump( res, 1, "", "", True )
     # I will assume the last residue is the ligand
-    copy_pose.pdb_info().chain( pose.total_residue(), 'X' )
+    copy_pose.pdb_info().chain( copy_pose.total_residue(), 'X' )
     copy_pose.update_pose_chains_from_pdb_chains()
 
     return copy_pose
@@ -148,7 +148,7 @@ def main():
     protocol, scfx = create_protocol("input/transform_repack.xml", ["high_res_docker", "final"], ["hard_rep"])
 
     smiles = "CN1CCC23C4C1CC5=C2C(=C(C=C5)O)OC3C(C=C4)O"
-    complex, score = full_docking(smiles, pose, protocol, scfx)
+    complex, score, distancce = full_docking(smiles, pose, protocol, scfx)
     print(complex.scores)
     print(score)
 

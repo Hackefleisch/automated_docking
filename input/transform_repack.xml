@@ -43,6 +43,9 @@
     </SCORINGGRIDS>
     
     <MOVERS>
+        <StartFrom name="placement" chain="X"> 
+            <Coordinates x="140.2520" y="126.5740" z="133.8730"/>
+        </StartFrom>
         <!--- in the Transform mover, initial_perturb="5.0" means that hte ligand will initially be translated by up to 5.0 Angstroms to avoid bias in benchmarking -->
         <Transform name="transform" chain="X" box_size="5.0" move_distance="0.1" angle="5" cycles="500" repeats="1" temperature="5" initial_perturb="5.0"/>
         <!--- as configured here, HighResDocker will perform a single round of repacking -->
