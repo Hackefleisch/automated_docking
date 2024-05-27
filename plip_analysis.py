@@ -141,11 +141,11 @@ def analyse_binding(mol):
             interact_84 = True
             break
 
-    if not interact_84:
-        for hbond in site.hbonds_pdon + site.hbonds_ldon:
-            if hbond.resnr == 84:
-                interact_84 = True
-                break
+    #if not interact_84:
+    #    for hbond in site.hbonds_pdon + site.hbonds_ldon:
+    #        if hbond.resnr == 84:
+    #            interact_84 = True
+    #            break
 
     return n_hydroph, n_hbond, n_saltbridge, n_pistack, n_pication, n_halogen, interact_84
 
