@@ -1,4 +1,4 @@
-name: test
+name: p6docking38
 channels:
   - pytorch
   - https://conda.graylab.jhu.edu
