@@ -141,6 +141,8 @@ def full_docking(smiles, pose, protocol, scfx):
         if score < best_score:
             best_score = score
             best_complex.detached_copy(work_pose)
+    n_atoms = Chem.rdMolDescriptors.CalcNumHeavyAtoms(mol)
+    best_score = best_score / (n_atoms**0.5)
     return best_complex, best_score, distance
 
 def main():
