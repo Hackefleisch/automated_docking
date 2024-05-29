@@ -121,6 +121,67 @@ def create_protocol(path, mover, scfx):
         score_func.append(xml_objects.get_score_function(sf))
     return protocol, score_func
 
+class FullDocker:
+
+    def __init__(self, smiles, pose, protocol, scfx) -> None:
+        self.smiles = smiles
+        self.pose = pose
+        self.protocol = protocol
+        self.scfx = scfx
+        self.step = 0
+        self.max_steps = 4
+        self.mol = None
+        self.distance = None
+        self.next_step = "Diffusing ligand"
+        self.max_num_dockings = 30
+        self.finished_dockings = 0
+        self.complex = None
+        self.best_score = 9999.999
+        self.best_complex = pyrosetta.rosetta.core.pose.Pose()
+        self.work_pose = pyrosetta.rosetta.core.pose.Pose()
+
+    # needs to be called several times until returning true
+    def run(self) -> bool:
+        if self.step == 0:
+            self.mol, self.distance = diffuse_ligand(self.smiles)
+            self.step += 1
+            self.next_step = "Dock ligand step " + str(self.finished_dockings + 1) + "/" + str(self.max_num_dockings)
+            return False
+        elif self.step == 1:
+            res = mol_to_res(self.mol)
+            self.complex = create_complex(self.pose, res)
+            self.best_complex.detached_copy(self.complex)
+            self.step += 1
+            return False
+        elif self.step == 2:
+            if self.finished_dockings < self.max_num_dockings:
+                print("----Protocol round", self.finished_dockings + 1)
+                self.work_pose.detached_copy(self.complex)
+                for p in self.protocol:
+                    print("----Apply", p.get_name())
+                    p.apply(self.work_pose)
+                idelta = pyrosetta.rosetta.protocols.ligand_docking.get_interface_deltas( 'X', self.work_pose, self.scfx[0] )
+                score = idelta["interface_delta_X"] - idelta["if_X_coordinate_constraint"]
+                if score < self.best_score:
+                    self.best_score = score
+                    self.best_complex.detached_copy(self.work_pose)
+                print("----Current score:", score, "best score:", self.best_score)
+                self.finished_dockings += 1
+                self.next_step = "Dock ligand step " + str(self.finished_dockings + 1) + "/" + str(self.max_num_dockings)
+                return False
+            else:
+                self.step += 1
+                self.next_step = "Normalize"
+                return False
+        elif self.step == 3:
+            n_atoms = Chem.rdMolDescriptors.CalcNumHeavyAtoms(self.mol)
+            print("Number of heavy atoms:", n_atoms, "Normalization:", n_atoms ** 0.5, "old score:", self.best_score)
+            self.best_score /= n_atoms ** 0.5
+            print("new score", self.best_score)
+            self.step += 1
+            return True        
+
+
 def full_docking(smiles, pose, protocol, scfx):
     mol, distance = diffuse_ligand(smiles)
     res = mol_to_res(mol)

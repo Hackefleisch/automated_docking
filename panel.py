@@ -139,7 +139,14 @@ def dock_ligand(event):
         info_field.object = "Reset values befor new calculation"
         return
     info_field.object = "Running calculation..."
-    complex, score, distance = ligand_docking.full_docking(smiles, pose, protocol, scfx)
+    docker = ligand_docking.FullDocker(smiles, pose, protocol, scfx)
+    finished = False
+    while not finished:
+        info_field.object = "Running calculation... " + docker.next_step
+        finished = docker.run()
+    complex = docker.best_complex
+    score = docker.best_score
+    distance = docker.distance
     info_field.object = "Running calculation... Done. Ligand has distance of " + str(distance)
     current_data[ 'Score' ] = [ score ] 
     current_data[ 'Pocket' ] = [ distance < 8.0 ] 
