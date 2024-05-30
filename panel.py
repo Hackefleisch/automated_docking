@@ -1,5 +1,6 @@
 import panel as pn
 from panel_chemistry.widgets import JSMEEditor
+from bokeh.models.widgets.tables import NumberFormatter
 from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem import AllChem
@@ -8,6 +9,7 @@ import pandas as pd
 import os
 import shutil
 import torch
+
 
 import ligand_docking
 import plip_analysis
@@ -95,13 +97,20 @@ def color_red_500(val):
     color = 'red' if val == None or val > 500 else 'green'
     return 'color: %s' % color
 
-current_mol_table = pn.widgets.Tabulator(current_df, formatters={'Name': text_formatter, 'Pocket': {'type': 'tickCross'}, '84': {'type': 'tickCross'}}, embed_content=False, layout='fit_columns')
+formatter = {
+    'Name': text_formatter, 
+    'Pocket': {'type': 'tickCross'}, 
+    '84': {'type': 'tickCross'}, 
+    'Score':  NumberFormatter(format='0.0000')
+}
+
+current_mol_table = pn.widgets.Tabulator(current_df, formatters=formatter, embed_content=False, layout='fit_columns')
 current_mol_table.sizing_mode = 'stretch_width'
 current_mol_table.style.applymap(color_red_5, subset=['Hbond don', 'LogP'])
 current_mol_table.style.applymap(color_red_10, subset=['Hbond acc'])
 current_mol_table.style.applymap(color_red_500, subset=['Weight'])
 
-saved_mol_table = pn.widgets.Tabulator(saved_df, formatters={'image': image_formatter, 'Name': text_formatter, 'Pocket': {'type': 'tickCross'}, '84': {'type': 'tickCross'}}, embed_content=False, pagination='remote', page_size=30, layout='fit_columns')
+saved_mol_table = pn.widgets.Tabulator(saved_df, formatters=formatter, embed_content=False, pagination='remote', page_size=30, layout='fit_columns')
 saved_mol_table.sizing_mode = 'stretch_width'
 saved_mol_table.style.applymap(color_red_5, subset=['Hbond don', 'LogP'])
 saved_mol_table.style.applymap(color_red_10, subset=['Hbond acc'])
