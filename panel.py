@@ -18,8 +18,9 @@ pn.extension("jsme", sizing_mode="stretch_width")
 
 editor = JSMEEditor(value="CN1CCC23C4C1CC5=C2C(=C(C=C5)O)OC3C(C=C4)O", height=500, format="smiles")
 
-editor.servable()
+#editor.servable()
 
+#pn.extension('tabulator', css_files=["https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"])
 pn.extension('tabulator')
 
 pose = ligand_docking.load_pose( "input/8ef6_0001_R.pdb" )
@@ -46,6 +47,7 @@ current_data = {
     'Pistack': [ None ],
     'Pication': [ None ],
     'Halogen': [ None ],
+    'Smiles' : [ None ],
 }
 current_df = pd.DataFrame(current_data)
 current_df.set_index('Name', inplace=True)
@@ -66,6 +68,7 @@ saved_data = {
     'Pication': [  ],
     'Halogen': [  ],
     'image': [  ],
+    'Smiles' : [  ],
 }
 if os.path.exists("results/docking.save"):
     saved_df = pd.read_pickle("results/docking.save")
@@ -104,17 +107,39 @@ formatter = {
     'Score':  NumberFormatter(format='0.0000')
 }
 
-current_mol_table = pn.widgets.Tabulator(current_df, formatters=formatter, embed_content=False, layout='fit_columns')
+table_buttons={
+    'Load': '<img src="https://cdn4.iconfinder.com/data/icons/basic-user-interface-elements/700/export-share-upload-512.png" width="20" height="20"></img>',
+    '_Delete': '<img src="https://cdn3.iconfinder.com/data/icons/font-awesome-regular-1/512/trash-can-512.png" width="20" height="20"></img>'
+}
+
+current_mol_table = pn.widgets.Tabulator(current_df, formatters=formatter, embed_content=False, layout='fit_columns', disabled=True, hidden_columns =['Smiles'])
 current_mol_table.sizing_mode = 'stretch_width'
 current_mol_table.style.applymap(color_red_5, subset=['Hbond don', 'LogP'])
 current_mol_table.style.applymap(color_red_10, subset=['Hbond acc'])
 current_mol_table.style.applymap(color_red_500, subset=['Weight'])
 
-saved_mol_table = pn.widgets.Tabulator(saved_df, formatters=formatter, embed_content=False, pagination='remote', page_size=30, layout='fit_columns')
+saved_mol_table = pn.widgets.Tabulator(saved_df, formatters=formatter, embed_content=False, pagination='remote', page_size=30, layout='fit_columns', buttons=table_buttons, disabled=True, hidden_columns =['Smiles'])
 saved_mol_table.sizing_mode = 'stretch_width'
 saved_mol_table.style.applymap(color_red_5, subset=['Hbond don', 'LogP'])
 saved_mol_table.style.applymap(color_red_10, subset=['Hbond acc'])
 saved_mol_table.style.applymap(color_red_500, subset=['Weight'])
+
+
+def table_click(event):
+    if event.column == "_Delete":
+        name = saved_df.index.to_list()[event.row]
+        print("Delete", name)
+        saved_df.drop(name, inplace=True)
+        print(saved_df)
+        saved_mol_table.value = saved_df
+        saved_df.to_pickle("results/docking.save")
+        shutil.rmtree("results/" + name)
+    elif event.column == "Load":
+        name = saved_df.index.to_list()[event.row]
+        print("Load", name)
+        load_current_data(name)
+
+saved_mol_table.on_click(table_click)
 
 mol2d_image = pn.pane.PNG(None, height=150)
 interaction_image = pn.pane.PNG(None, height=350)
@@ -135,6 +160,7 @@ def analyze_mol(event):
         current_data[ 'Hbond acc' ] = [ Descriptors.NOCount(mol) ]
         current_data[ 'Hbond don' ] = [ Descriptors.NHOHCount(mol) ]
         current_data[ 'LogP' ] = [ Descriptors.MolLogP(mol) ] 
+        current_data[ 'Smiles' ] = smiles
         current_df = pd.DataFrame(current_data)
         current_df.set_index('Name', inplace=True)
         current_mol_table.value = current_df
@@ -246,12 +272,26 @@ def reset_current_data(event=None):
         'Pistack': [ None ],
         'Pication': [ None ],
         'Halogen': [ None ],
+        'Smiles': [ None ],
     }
     current_df = pd.DataFrame(current_data)
     current_df.set_index('Name', inplace=True)
     current_mol_table.value = current_df
     interaction_image.object = None
     mol2d_image.object = None
+
+def load_current_data(mol_name):
+    global current_df, saved_df
+    if current_df.isnull().all().all():
+        current_name = current_df.index.to_list()[0]
+        current_df.loc[current_name] = saved_df.loc[mol_name]
+        #current_df.set_index('Name', inplace=True)
+        current_mol_table.value = current_df
+        interaction_image.object = 'results/' + mol_name + '/interactions.png'
+        mol2d_image.object = 'results/' + mol_name + '/mol2d.png'
+        editor.value = saved_df.loc[mol_name][ 'Smiles' ]
+    else:
+        info_field.object = "Clear results before loading"
 
 # Create a button widget
 draw_button = pn.widgets.Button(name='Generate Image', button_type='primary')
@@ -281,4 +321,4 @@ layout = pn.Column(
     saved_mol_table,
     cuda_field,
 )
-layout.show()
+layout.servable()
