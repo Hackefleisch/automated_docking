@@ -101,6 +101,7 @@ def color_red_500(val):
     return 'color: %s' % color
 
 formatter = {
+    'image' : image_formatter,
     'Name': text_formatter, 
     'Pocket': {'type': 'tickCross'}, 
     '84': {'type': 'tickCross'}, 
